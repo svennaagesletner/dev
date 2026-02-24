@@ -1,0 +1,604 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Locale {
+  nb
+  nn
+  en
+}
+
+enum AuthProvider {
+  FEIDE
+  IDPORTEN
+  LOCAL_PASSWORD
+  LOCAL_MAGICLINK
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum AcademicYearStatus {
+  DRAFT
+  ACTIVE
+  LOCKED
+  ARCHIVED
+}
+
+enum ResourceCategoryCode {
+  TEACHER
+  ASSISTANT
+  SFO
+}
+
+enum ChangeRequestStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CANCELLED
+  IMPLEMENTED
+}
+
+enum ChangeEntityType {
+  CONTRACT
+  DEMAND
+  ALLOCATION
+  STUDENTGROUP
+}
+
+enum ChangeAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum AllocationStatus {
+  DRAFT
+  CONFIRMED
+}
+
+model Municipality {
+  id                 String                 @id @default(cuid())
+  name               String
+  defaultLocale      Locale                 @default(nb)
+  settings           MunicipalitySettings?
+  schools            School[]
+  roles              Role[]
+  permissions        Permission[]
+  academicYears      AcademicYear[]
+  resourceCategories ResourceCategory[]
+  fteCalendars       FteCalendar[]
+  memberships        Membership[]
+  invites            Invite[]
+  frames             MunicipalityFrameAllocation[]
+  changeRequests     ChangeRequest[]
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+}
+
+model MunicipalitySettings {
+  municipalityId          String       @id
+  municipality            Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  defaultFteCalendarId    String?
+  defaultFteCalendar      FteCalendar? @relation("MunicipalityDefaultCalendar", fields: [defaultFteCalendarId], references: [id])
+
+  allowYearUnlock         Boolean      @default(false)
+  requireTwoStepImplement Boolean      @default(true)
+
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+}
+
+model School {
+  id                    String                        @id @default(cuid())
+  municipalityId        String
+  municipality          Municipality                  @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  name                  String
+
+  defaultUnitProfileId  String?
+  defaultUnitProfile    UnitProfile?                  @relation("SchoolDefaultUnit", fields: [defaultUnitProfileId], references: [id])
+
+  fteCalendarOverrideId String?
+  fteCalendarOverride   FteCalendar?                  @relation("SchoolOverrideCalendar", fields: [fteCalendarOverrideId], references: [id])
+
+  unitProfiles          UnitProfile[]
+  staff                 Staff[]
+  studentGroups         StudentGroup[]
+  demands               ResourceDemand[]
+  frames                MunicipalityFrameAllocation[]
+  changeRequests        ChangeRequest[]
+  memberships           Membership[]
+  invites               Invite[]
+  fteCalendars          FteCalendar[]
+
+  createdAt             DateTime                      @default(now())
+  updatedAt             DateTime                      @updatedAt
+
+  @@index([municipalityId])
+}
+
+model AcademicYear {
+  id                 String             @id @default(cuid())
+  municipalityId     String
+  municipality       Municipality       @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  name               String
+  startDate          DateTime
+  endDate            DateTime
+
+  status             AcademicYearStatus @default(DRAFT)
+  lockedAt           DateTime?
+
+  templateFromYearId String?
+  templateFromYear   AcademicYear?      @relation("YearTemplate", fields: [templateFromYearId], references: [id])
+  templatedInto      AcademicYear[]     @relation("YearTemplate")
+
+  studentGroups      StudentGroup[]
+  contracts          EmploymentContract[]
+  demands            ResourceDemand[]
+  frames             MunicipalityFrameAllocation[]
+  changeRequests     ChangeRequest[]
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([municipalityId])
+}
+
+model UnitProfile {
+  id               String   @id @default(cuid())
+  schoolId         String
+  school           School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  name             String
+  minutesPerUnit   Int
+  roundingMode     String   @default("NONE")
+
+  appliesToTrinnMin Int?
+  appliesToTrinnMax Int?
+
+  defaultForSchools School[] @relation("SchoolDefaultUnit")
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([schoolId])
+}
+
+model FteCalendar {
+  id                 String                  @id @default(cuid())
+
+  municipalityId      String?
+  municipality        Municipality?          @relation(fields: [municipalityId], references: [id], onDelete: SetNull)
+
+  schoolId            String?
+  school              School?                @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+
+  annualMinutesPerFte Int
+  weeklyMinutesPerFte Int?
+
+  notes               String?
+
+  defaultForSettings  MunicipalitySettings[] @relation("MunicipalityDefaultCalendar")
+  overrideForSchools  School[]               @relation("SchoolOverrideCalendar")
+
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  @@index([municipalityId])
+  @@index([schoolId])
+}
+
+model User {
+  id                      String           @id @default(cuid())
+  name                    String?
+  email                   String?          @unique
+  emailVerified           DateTime?
+  image                   String?
+  localeOverride          Locale?
+
+  accounts                Account[]
+  sessions                Session[]
+  passwordCredential      PasswordCredential?
+
+  identities              AccountIdentity[]
+  memberships             Membership[]
+  invitesCreated          Invite[]         @relation("InvitesCreated")
+  invitesAccepted         Invite[]         @relation("InvitesAccepted")
+  changeRequestsRequested ChangeRequest[]  @relation("RequestedBy")
+  changeRequestsReviewed  ChangeRequest[]  @relation("ReviewedBy")
+
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model AccountIdentity {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider        AuthProvider
+  providerSubject String
+  email           String?
+  lastLoginAt     DateTime?
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([provider, providerSubject])
+  @@index([userId])
+}
+
+model PasswordCredential {
+  userId       String   @id
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passwordHash String
+  updatedAt    DateTime @updatedAt
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  schoolId       String?
+  school         School?      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  roleId         String
+  role           Role         @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([userId, municipalityId])
+  @@index([municipalityId, schoolId])
+}
+
+model Role {
+  id               String           @id @default(cuid())
+  municipalityId   String
+  municipality     Municipality     @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  name             String
+  description      String?
+  isSystemTemplate Boolean          @default(false)
+
+  rolePermissions  RolePermission[]
+  memberships      Membership[]
+  invites          Invite[]
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([municipalityId, name])
+  @@index([municipalityId])
+}
+
+model Permission {
+  id             String           @id @default(cuid())
+  municipalityId String
+  municipality   Municipality     @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  code           String
+  resource       String
+  action         String
+  descriptionKey String
+
+  roles          RolePermission[]
+
+  @@unique([municipalityId, code])
+  @@index([municipalityId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model Invite {
+  id               String       @id @default(cuid())
+  municipalityId   String
+  municipality     Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  schoolId         String?
+  school           School?      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  roleId           String
+  role             Role         @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  email            String?
+  tokenHash        String
+  status           InviteStatus @default(PENDING)
+  expiresAt        DateTime
+
+  createdByUserId  String
+  createdByUser    User         @relation("InvitesCreated", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  acceptedByUserId String?
+  acceptedByUser   User?        @relation("InvitesAccepted", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+  acceptedAt       DateTime?
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([municipalityId, schoolId])
+  @@index([status, expiresAt])
+}
+
+model ResourceCategory {
+  id             String               @id @default(cuid())
+  municipalityId String
+  municipality   Municipality         @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  code           ResourceCategoryCode
+  nameKey        String
+  sortOrder      Int                  @default(0)
+
+  demands        ResourceDemand[]
+  frames         MunicipalityFrameAllocation[]
+  allocations    StaffAllocation[]
+
+  @@unique([municipalityId, code])
+  @@index([municipalityId])
+}
+
+model StudentGroup {
+  id             String       @id @default(cuid())
+  schoolId       String
+  school         School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  trinn          Int
+  classCode      String
+  totalCount     Int
+  maleCount      Int
+  femaleCount    Int
+
+  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime     @default(now())
+
+  @@index([schoolId, academicYearId])
+  @@unique([academicYearId, schoolId, trinn, classCode])
+}
+
+model Staff {
+  id         String               @id @default(cuid())
+  schoolId   String
+  school     School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  firstName  String
+  lastName   String
+
+  isLeader   Boolean              @default(false)
+  active     Boolean              @default(true)
+  notes      String?
+
+  contracts  EmploymentContract[]
+
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  @@index([schoolId])
+}
+
+model EmploymentContract {
+  id             String             @id @default(cuid())
+  staffId        String
+  staff          Staff              @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  academicYearId String
+  academicYear   AcademicYear       @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  baseFte        Decimal            @db.Decimal(5, 3)
+  startDate      DateTime?
+  endDate        DateTime?
+  notes          String?
+
+  allocations    StaffAllocation[]
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([academicYearId])
+  @@index([staffId, academicYearId])
+  @@unique([staffId, academicYearId])
+}
+
+model ResourceDemand {
+  id             String             @id @default(cuid())
+  schoolId       String
+  school         School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  academicYearId String
+  academicYear   AcademicYear       @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  categoryId     String
+  category       ResourceCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  demandedFte    Decimal            @db.Decimal(6, 3)
+  comment        String?
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([schoolId, academicYearId, categoryId])
+  @@index([schoolId, academicYearId])
+}
+
+model MunicipalityFrameAllocation {
+  id             String             @id @default(cuid())
+
+  municipalityId String
+  municipality   Municipality       @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  academicYearId String
+  academicYear   AcademicYear       @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  schoolId       String
+  school         School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  categoryId     String
+  category       ResourceCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  allocatedFte   Decimal            @db.Decimal(6, 3)
+  comment        String?
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([municipalityId, academicYearId, schoolId, categoryId])
+  @@index([municipalityId, academicYearId])
+  @@index([schoolId, academicYearId])
+}
+
+model StaffAllocation {
+  id                     String            @id @default(cuid())
+  contractId             String
+  contract               EmploymentContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  categoryId             String
+  category               ResourceCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  allocatedFte           Decimal           @db.Decimal(6, 3)
+  status                 AllocationStatus  @default(CONFIRMED)
+  notes                  String?
+
+  copiedFromAllocationId String?
+  copiedFromAllocation   StaffAllocation?  @relation("AllocationCopy", fields: [copiedFromAllocationId], references: [id])
+  copiedInto             StaffAllocation[] @relation("AllocationCopy")
+
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+
+  @@index([contractId])
+  @@index([categoryId])
+  @@unique([contractId, categoryId, status])
+}
+
+model ChangeRequest {
+  id                String              @id @default(cuid())
+  municipalityId    String
+  municipality      Municipality        @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  schoolId          String
+  school            School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  academicYearId    String
+  academicYear      AcademicYear        @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  status            ChangeRequestStatus @default(DRAFT)
+  title             String
+  message           String?
+
+  requestedByUserId String
+  requestedByUser   User                @relation("RequestedBy", fields: [requestedByUserId], references: [id], onDelete: Restrict)
+
+  reviewedByUserId  String?
+  reviewedByUser    User?               @relation("ReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  submittedAt       DateTime?
+  reviewedAt        DateTime?
+  implementedAt     DateTime?
+
+  items             ChangeRequestItem[]
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([municipalityId, academicYearId, status])
+  @@index([schoolId, academicYearId])
+}
+
+model ChangeRequestItem {
+  id                   String           @id @default(cuid())
+  changeRequestId      String
+  changeRequest        ChangeRequest    @relation(fields: [changeRequestId], references: [id], onDelete: Cascade)
+
+  entityType           ChangeEntityType
+  action               ChangeAction
+  entityId             String?
+
+  currentDataJson      Json?
+  proposedDataJson     Json
+  validationErrorsJson Json?
+
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([changeRequestId])
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  municipalityId String
+  schoolId       String?
+  userId         String
+
+  action         String
+  entityType     String
+  entityId       String
+  diffJson       Json?
+
+  createdAt      DateTime @default(now())
+
+  @@index([municipalityId, createdAt])
+  @@index([schoolId, createdAt])
+}

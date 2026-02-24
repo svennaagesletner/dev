@@ -1,0 +1,43 @@
+{
+  "nav": {
+    "home": "Heim",
+    "dashboard": "Oversyn",
+    "roles": "Roller",
+    "invites": "Invitasjonar",
+    "years": "År",
+    "schoolOverview": "Skuleoversyn"
+  },
+  "resource": {
+    "teacher": "Lærar",
+    "assistant": "Assistent",
+    "sfo": "SFO"
+  },
+  "permission": {
+    "RBAC_ROLE_READ": "Lese roller",
+    "RBAC_ROLE_WRITE": "Opprette/endre roller",
+    "RBAC_PERMISSION_ASSIGN": "Tilordne rolle-løyve",
+    "INVITE_READ": "Lese invitasjonar",
+    "INVITE_CREATE": "Opprette invitasjonar",
+    "INVITE_REVOKE": "Trekkje tilbake invitasjonar",
+    "ACADEMICYEAR_READ": "Lese skuleår",
+    "ACADEMICYEAR_CREATE": "Opprette skuleår",
+    "ACADEMICYEAR_LOCK": "Låse skuleår",
+    "ACADEMICYEAR_UNLOCK": "Låse opp skuleår",
+    "ALLOCATION_READ": "Lese allokeringar",
+    "ALLOCATION_UPDATE": "Endre allokeringar",
+    "DEMAND_READ": "Lese behov",
+    "DEMAND_UPDATE": "Endre behov",
+    "CONTRACT_READ": "Lese kontraktar",
+    "CONTRACT_UPDATE": "Endre kontraktar",
+    "EDIT_WHEN_LOCKED": "Redigere etter låsing"
+  },
+  "ui": {
+    "acceptInvite": "Godta invitasjon",
+    "token": "Token",
+    "signIn": "Logg inn",
+    "noAccess": "Ingen tilgang",
+    "dashboard": "Oversyn",
+    "create": "Opprett",
+    "revoke": "Trekk tilbake"
+  }
+}

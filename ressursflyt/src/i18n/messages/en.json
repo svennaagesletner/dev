@@ -1,0 +1,43 @@
+{
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "roles": "Roles",
+    "invites": "Invites",
+    "years": "Years",
+    "schoolOverview": "School overview"
+  },
+  "resource": {
+    "teacher": "Teacher",
+    "assistant": "Assistant",
+    "sfo": "SFO"
+  },
+  "permission": {
+    "RBAC_ROLE_READ": "Read roles",
+    "RBAC_ROLE_WRITE": "Create/update roles",
+    "RBAC_PERMISSION_ASSIGN": "Assign role permissions",
+    "INVITE_READ": "Read invites",
+    "INVITE_CREATE": "Create invites",
+    "INVITE_REVOKE": "Revoke invites",
+    "ACADEMICYEAR_READ": "Read academic years",
+    "ACADEMICYEAR_CREATE": "Create academic years",
+    "ACADEMICYEAR_LOCK": "Lock academic years",
+    "ACADEMICYEAR_UNLOCK": "Unlock academic years",
+    "ALLOCATION_READ": "Read allocations",
+    "ALLOCATION_UPDATE": "Update allocations",
+    "DEMAND_READ": "Read demand",
+    "DEMAND_UPDATE": "Update demand",
+    "CONTRACT_READ": "Read contracts",
+    "CONTRACT_UPDATE": "Update contracts",
+    "EDIT_WHEN_LOCKED": "Edit while year locked"
+  },
+  "ui": {
+    "acceptInvite": "Accept invite",
+    "token": "Token",
+    "signIn": "Sign in",
+    "noAccess": "No access",
+    "dashboard": "Dashboard",
+    "create": "Create",
+    "revoke": "Revoke"
+  }
+}

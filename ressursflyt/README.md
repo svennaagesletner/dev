@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ressursflyt
 
-## Getting Started
+Production-oriented MVP for Norwegian municipality/school resource planning.
 
-First, run the development server:
+## Stack
+
+- Next.js App Router + TypeScript
+- Prisma + PostgreSQL
+- Auth.js (NextAuth) with Prisma adapter
+- tRPC + TanStack Query
+- next-intl locale segment routing (`/nb`, `/nn`, `/en`)
+- Tailwind CSS
+
+## Core features included
+
+- Invite-only access with hashed invite tokens (`sha256`)
+- Auth provider setup for Feide, ID-porten, local password, magic link
+- Municipality-scoped RBAC (roles + permissions + role-permission assignments)
+- Academic year lifecycle (list, lock/unlock, create from previous template)
+- Year templating procedure with student trinn rollover, contract/demand/allocation copying
+- School overview rollups (Frame vs Demand vs Allocated + capacity mismatch flags)
+- Locale routes and translation messages for nb/nn/en
+
+## Required environment variables
+
+See [.env.example](.env.example).
+
+## Local setup
+
+1. Install dependencies
+
+```bash
+npm install
+```
+
+2. Configure env file
+
+```bash
+cp .env.example .env
+```
+
+3. Generate Prisma client
+
+```bash
+npm run prisma:generate
+```
+
+4. Create and run initial migration
+
+```bash
+npm run prisma:migrate -- --name init
+```
+
+5. Seed demo data
+
+```bash
+npm run prisma:seed
+```
+
+6. Start dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo credentials
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Email: `admin@example.com`
+- Password: `Admin1234!`
 
-## Learn More
+## Important paths
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Prisma schema: [prisma/schema.prisma](prisma/schema.prisma)
+- Seed script: [prisma/seed.ts](prisma/seed.ts)
+- Auth route: [src/app/api/auth/[...nextauth]/route.ts](src/app/api/auth/%5B...nextauth%5D/route.ts)
+- tRPC route: [src/app/api/trpc/[trpc]/route.ts](src/app/api/trpc/%5Btrpc%5D/route.ts)
+- i18n messages: [src/i18n/messages/nb.json](src/i18n/messages/nb.json), [src/i18n/messages/nn.json](src/i18n/messages/nn.json), [src/i18n/messages/en.json](src/i18n/messages/en.json)
